@@ -36,10 +36,12 @@ def run_doci(watch=False):
 
     class LiterallyHandler(FileSystemEventHandler):
         def on_modified(self, event):
-            if event.src_path.endswith("doci.py"):
-                print("\nFile changed, running 'uv run doci.py'...")
-                run()
-                print("\nWatching for changes...")
+            for file in ["doci.py", "doci.css", "template.html"]:
+                if event.src_path.endswith(file):
+                    print(f"{file} changed, running 'uv run doci.py'...")
+                    run()
+                    print("Watching for changes...")
+                    break
 
     # Initial run
     run()
