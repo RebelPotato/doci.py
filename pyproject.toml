@@ -1,0 +1,12 @@
+[project]
+name = "literally"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["pygments>=2.19.2", "pystache>=0.6.8"]
+
+[tool.uv]
+dev-dependencies = [
+    "snoop>=0.6.0",
+]
