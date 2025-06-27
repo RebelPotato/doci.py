@@ -17,7 +17,6 @@ def run():
         subprocess.run(["uv", "run", "literally.py"], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running literally.py: {e}")
-        sys.exit(1)
 
 
 def run_literally(watch=False):
@@ -39,7 +38,7 @@ def run_literally(watch=False):
         def on_modified(self, event):
             if event.src_path.endswith("literally.py"):
                 print("\nFile changed, running 'uv run literally.py'...")
-                subprocess.run(["uv", "run", "literally.py"], check=True)
+                run()
                 print("\nWatching for changes...")
 
     # Initial run
