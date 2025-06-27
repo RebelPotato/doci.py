@@ -13,8 +13,8 @@
 # watches `doci.py` for changes and reruns it automatically, which
 # is a very simple way to add file watching abilities to Doci.
 #
-# Doci is <200 lines of code plus comments for now, so it should be
-# easy to read and modify.
+# It is also well-documented. Doci is <250 lines of code plus comments for now,
+# so it should be easy to read and modify.
 #
 # ## Usage
 #
@@ -42,16 +42,16 @@ from dataclasses import dataclass
 
 #### Utility functions
 def running(f, iterable, init=None):
-    """ "
+    """
     Calculate a running value from an iterable using a binary function `f`.
-    " """
+    """
     for x in iterable:
         init = x if init is None else f(init, x)
         yield init
 
 
 def running_sum(iterable, init=None):
-    """ "
+    """
     Calculate a running sum.
 
     ``` python
@@ -61,7 +61,7 @@ def running_sum(iterable, init=None):
     >> list(running_sum(range(5), 10))
     [10, 11, 13, 16, 20, 25]
     ```
-    " """
+    """
     return running(lambda x, y: x + y, iterable, init)
 
 
@@ -74,11 +74,11 @@ def indent_size(s: str) -> int:
 
 
 def dedent(s: List[str]) -> List[str]:
-    """ "
+    """
     Dedent a list of strings, removing the minimum leading whitespace
     from all visible lines. Invisible lines (empty or whitespace-only)
     are left unchanged.
-    " """
+    """
     stripped = [line.strip() for line in s]
     min_indent = min(
         (indent_size(line) for line, st in zip(s, stripped) if st != ""), default=None
@@ -92,36 +92,40 @@ def dedent(s: List[str]) -> List[str]:
 def parse_blockquote(
     contents: List[str], block_syms: Tuple[str, str]
 ) -> Tuple[List[int], List[int]]:
-    """ "
+    """
     Parse out blockquotes from a list of contents.
-    " """
+    """
     is_blockquote = [
         1 if c.startswith(block_syms[0]) else -1 if c.startswith(block_syms[1]) else 0
         for c in contents
     ]
-    # We don't handle recursive blockquotes, because most languages don't support them.
+    if block_syms[0] == block_syms[1]:
+        # every other blockquote is an end quote.
+        blockquote_locs = [i for i, v in enumerate(is_blockquote) if v == 1]
+        for i, p in enumerate(blockquote_locs):
+            if i % 2 == 1:
+                is_blockquote[p] = -1
     level = [0] * len(contents)
     seen_quote = 0
     for i, v in enumerate(is_blockquote):
         if v == 1:
-            level[i] = 1
+            # We don't handle recursive blockquotes, because most languages don't support them.
+            # If we do, we would need to increment `seen_quote` here.
             seen_quote = 1
         elif v == -1:
-            # The end quote has level 1 too.
-            level[i] = seen_quote
+            # This works even if there are more end quotes than start quotes.
             seen_quote = max(0, seen_quote - 1)
-        else:
-            level[i] = seen_quote
+        level[i] = seen_quote
     return is_blockquote, level
 
 
 def extract_chunks(
     code: str, comment_start: str, block_syms: Tuple[str, str]
 ) -> Tuple[List[str], List[str]]:
-    """ "
+    """
     Extract doc and code chunks from a program. We return a list of chunks
     and a list of booleans indicating whether each chunk is a doc chunk.
-    " """
+    """
     lines = code.splitlines(keepends=True)
     lc = len(lines)  # line count
     # Contents are lines stripped of whitespace and line breaks.
@@ -130,7 +134,9 @@ def extract_chunks(
     is_blockquote, level = parse_blockquote(contents, block_syms)
 
     # Chunks are consecutive lines. Docs are chunks that are comments or blockquoted.
-    is_doc = [is_comment[i] or is_blockquote[i] or level[i] != 0 for i in range(lc)]
+    is_doc = [
+        is_comment[i] or is_blockquote[i] != 0 or level[i] != 0 for i in range(lc)
+    ]
     # Chunks are always interspersed, meaning that for each two doc chunks
     # there is a code chunk in between, and vice versa.
     is_chunk_top = [i == 0 or is_doc[i - 1] != is_doc[i] for i in range(lc)]
@@ -143,7 +149,7 @@ def extract_chunks(
         if is_comment[i]:
             return contents[i].removeprefix(comment_start) + "\n"
         if is_blockquote[i] != 0:
-            # We ignore all blockquote lines for now!
+            # We ignore all blockquote lines!
             return ""
         if is_doc[i]:
             return contents[i] + "\n"
@@ -159,11 +165,11 @@ def extract_chunks(
 
 #### Formatting
 def highlight(code_chunks: List[str], language: str, comment_start: str) -> List[str]:
-    """ "
+    """
     Turn a list of code chunks into HTML using pygments.
     The code chunks are merged and passed pygments in one go,
     which is more efficient than highlighting each chunk separately.
-    " """
+    """
     # Magic divider text and html copied from pycco.
     divider_text = f"\n{comment_start}DIVIDER\n"
     divider_html = re.compile(
@@ -186,9 +192,9 @@ def highlight(code_chunks: List[str], language: str, comment_start: str) -> List
 
 
 def to_markdown(chunk_type: List[str], chunks: List[str], language: str) -> str:
-    """ "
+    """
     Convert the chunks into a markdown string.
-    " """
+    """
     md = []
     for i, chunk in enumerate(chunks):
         if chunk_type[i] == "doc":
@@ -196,7 +202,9 @@ def to_markdown(chunk_type: List[str], chunks: List[str], language: str) -> str:
             md.append("".join(dedent(chunk.splitlines(keepends=True))))
         else:
             # Code chunks are stripped of trailing spaces and newlines.
-            md.append(f"```{language}\n{chunk.rstrip()}\n```\n")
+            stripped = chunk.rstrip()
+            if stripped != "":
+                md.append(f"```{language}\n{chunk.rstrip()}\n```\n")
     return "\n".join(md)
 
 
@@ -204,9 +212,7 @@ def to_markdown(chunk_type: List[str], chunks: List[str], language: str) -> str:
 def main():
     with open("doci.py", "r") as f:
         code = f.read()
-    # *important hack*: we use four double quotes to denote docstrings
-    # that we want to extract as documentation.
-    chunk_type, chunks = extract_chunks(code, "#", ('""" "', '" """'))
+    chunk_type, chunks = extract_chunks(code, "#", ('"""', '"""'))
     # Hardcoded to generate this source to README.md file for now.
     with open("README.md", "w") as f:
         f.write(to_markdown(chunk_type, chunks, "python"))
