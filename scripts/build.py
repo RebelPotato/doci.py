@@ -5,26 +5,25 @@ import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+COMMAND = "uv run doci.py -m README.md -H index.html doci.py"
+
 
 def run():
     """
-    Run 'uv run doci.py' command and catch exceptions
-
-    This function is used to execute the `doci.py` script using the `uv` command.
-    It can be run in watch mode to automatically rerun the script when changes are detected.
+    Run and catch exceptions from the doci.py script.
     """
     try:
-        subprocess.run(["uv", "run", "doci.py"], check=True)
+        subprocess.run(
+            COMMAND.split(" "),
+            check=True,
+        )
     except subprocess.CalledProcessError as e:
         print(f"Error running doci.py: {e}")
 
 
-def run_doci(watch=False):
+def watch(watch=False):
     """
-    Run 'uv run doci.py' command.
-
-    Args:
-        watch (bool): If True, watch doci.py for changes and rerun on save.
+    Watch files for changes and run the command.
     """
     if not watch:
         # Just run the command once
@@ -38,7 +37,7 @@ def run_doci(watch=False):
         def on_modified(self, event):
             for file in ["doci.py", "doci.css", "template.html"]:
                 if event.src_path.endswith(file):
-                    print(f"{file} changed, running 'uv run doci.py'...")
+                    print(f"{file} changed, running '{COMMAND}'...")
                     run()
                     print("Watching for changes...")
                     break
@@ -66,4 +65,4 @@ def run_doci(watch=False):
 
 if __name__ == "__main__":
     watch_mode = "-w" in sys.argv
-    run_doci(watch=watch_mode)
+    watch(watch=watch_mode)
