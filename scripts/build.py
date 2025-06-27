@@ -8,23 +8,23 @@ from watchdog.events import FileSystemEventHandler
 
 def run():
     """
-    Run 'uv run literally.py' command and catch exceptions
+    Run 'uv run doci.py' command and catch exceptions
 
-    This function is used to execute the `literally.py` script using the `uv` command.
+    This function is used to execute the `doci.py` script using the `uv` command.
     It can be run in watch mode to automatically rerun the script when changes are detected.
     """
     try:
-        subprocess.run(["uv", "run", "literally.py"], check=True)
+        subprocess.run(["uv", "run", "doci.py"], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error running literally.py: {e}")
+        print(f"Error running doci.py: {e}")
 
 
-def run_literally(watch=False):
+def run_doci(watch=False):
     """
-    Run 'uv run literally.py' command.
+    Run 'uv run doci.py' command.
 
     Args:
-        watch (bool): If True, watch literally.py for changes and rerun on save.
+        watch (bool): If True, watch doci.py for changes and rerun on save.
     """
     if not watch:
         # Just run the command once
@@ -32,12 +32,12 @@ def run_literally(watch=False):
         return
 
     # Watch mode
-    print("Watching literally.py for changes (Ctrl+C to stop)...")
+    print("Watching doci.py for changes (Ctrl+C to stop)...")
 
     class LiterallyHandler(FileSystemEventHandler):
         def on_modified(self, event):
-            if event.src_path.endswith("literally.py"):
-                print("\nFile changed, running 'uv run literally.py'...")
+            if event.src_path.endswith("doci.py"):
+                print("\nFile changed, running 'uv run doci.py'...")
                 run()
                 print("\nWatching for changes...")
 
@@ -49,7 +49,7 @@ def run_literally(watch=False):
     observer = Observer()
     observer.schedule(
         event_handler,
-        path=os.path.dirname(os.path.abspath("literally.py")),
+        path=os.path.dirname(os.path.abspath("doci.py")),
         recursive=False,
     )
     observer.start()
@@ -64,4 +64,4 @@ def run_literally(watch=False):
 
 if __name__ == "__main__":
     watch_mode = "-w" in sys.argv
-    run_literally(watch=watch_mode)
+    run_doci(watch=watch_mode)
