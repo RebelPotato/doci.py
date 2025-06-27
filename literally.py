@@ -1,6 +1,14 @@
 ## Literally
 #
 # Literally is a tool for semi-literate programming.
+#
+# Unlike real literate programming tools, Literally does not rearrange your code.
+#
+# This is very much a rewrite of [pycco](https://github.com/pycco-docs/pycco), which itself
+# is a Python port of [Docco](https://github.com/jashkenas/docco).
+#
+
+### The code
 
 import re
 import argparse
@@ -9,10 +17,10 @@ from typing import TypedDict, List, Tuple
 from dataclasses import dataclass
 
 # I use snoop for print debugging.
-import snoop
+# import snoop
 
 
-### Utility functions
+#### Utility functions
 def running(f, iterable, init=None):
     """
     Calculate a running value from an iterable using a binary function `f`.
@@ -37,7 +45,20 @@ def running_sum(iterable, init=None):
     return running(lambda x, y: x + y, iterable, init)
 
 
-### Parsing
+def indent_size(s: str) -> int:
+    # A string's indent size is the number of leading spaces.
+    for i, c in enumerate(s):
+        if c != " ":
+            return i
+    return len(s)
+
+
+def dedent(s: List[str]) -> List[str]:
+    min_indent = min(indent_size(line) for line in s)
+    return [line[min_indent:] for line in s]
+
+
+#### Extracting chunks
 def parse_blockquote(
     contents: List[str], block_syms: Tuple[str, str]
 ) -> Tuple[List[int], List[int]]:
@@ -61,7 +82,49 @@ def parse_blockquote(
     return is_blockquote, level
 
 
-### Formatting
+def extract_chunks(
+    code: str, comment_start: str, block_syms: Tuple[str, str]
+) -> Tuple[List[str], List[str]]:
+    """
+    Extract doc and code chunks from a program. We return a list of chunks
+    and a list of booleans indicating whether each chunk is a doc chunk.
+    """
+    lines = code.splitlines(keepends=True)
+    lc = len(lines)  # line count
+    # Contents are lines stripped of leading whitespace. We strip leading
+    # whitespaces only to minimize changes.
+    contents = [line.lstrip() for line in lines]
+    is_comment = [c.startswith(comment_start) for c in contents]
+    is_blockquote, level = parse_blockquote(contents, block_syms)
+
+    # Chunks are consecutive lines. Docs are chunks that are comments or blockquoted.
+    is_doc = [is_comment[i] or is_blockquote[i] or level[i] != 0 for i in range(lc)]
+    # Chunks are always interspersed, meaning that for each two doc chunks
+    # there is a code chunk in between, and vice versa.
+    is_chunk_top = [i == 0 or is_doc[i - 1] != is_doc[i] for i in range(lc)]
+    chunk_top_loc = [i for i, v in enumerate(is_chunk_top) if v]
+    chunk_bottom_loc = chunk_top_loc[1:] + [lc]
+
+    # doc chunks are stripped of its starting symbols and whitespaces,
+    # while code chunks are left as is.
+    def strip(i: int, s: str) -> str:
+        if is_comment[i]:
+            return contents[i].removeprefix(comment_start)
+        if is_blockquote[i] != 0:
+            return contents[i].removeprefix(block_syms[0]).removesuffix(block_syms[1])
+        if is_doc[i]:
+            return contents[i]
+        return s
+
+    chunk_lines = [strip(i, s) for i, s in enumerate(lines)]
+    chunk_type = ["doc" if is_doc[i] else "code" for i in chunk_top_loc]
+    chunks = [
+        "".join(chunk_lines[i:j]) for i, j in zip(chunk_top_loc, chunk_bottom_loc)
+    ]
+    return chunk_type, chunks
+
+
+#### Formatting
 def highlight(code_chunks: List[str], language: str, comment_start: str) -> List[str]:
     """
     Highlight all code chunks in one pass to pygments,
@@ -88,66 +151,22 @@ def highlight(code_chunks: List[str], language: str, comment_start: str) -> List
     return re.split(divider_html, output)
 
 
-### The whole process
-def extract_chunks(
-    code: str, comment_start: str, block_syms: Tuple[str, str]
-) -> Tuple[List[str], List[str]]:
-    """
-    Extrace doc and code chunks from a program. We return a list of chunks
-    and a list of booleans indicating whether each chunk is a doc chunk.
-    """
-    lines = code.splitlines(keepends=True)
-    lc = len(lines)  # line count
-    # Contents are lines stripped of leading whitespace. We strip leading
-    # whitespaces only to minimize changes.
-    contents = [line.lstrip() for line in lines]
-    is_comment = [c.startswith(comment_start) for c in contents]
-    is_blockquote, level = parse_blockquote(contents, block_syms)
-
-    # Chunks are consecutive lines. Docs are chunks that are comments or blockquoted.
-    is_doc = [is_comment[i] or is_blockquote[i] or level[i] != 0 for i in range(lc)]
-    # Chunks are always interspersed, meaning that for each two doc chunks
-    # there is a code chunk in between, and vice versa.
-    is_chunk_top = [i == 0 or is_doc[i - 1] != is_doc[i] for i in range(lc)]
-    chunk_top_loc = [i for i, v in enumerate(is_chunk_top) if v]
-    chunk_bottom_loc = chunk_top_loc[1:] + [lc]
-    # doc chunks are stripped of its comment start or blockquote symbols,
-    # while code chunks are left as is.
-    chunk_lines = [
-        (
-            contents[i].removeprefix(comment_start)
-            if is_comment[i]
-            else (
-                contents[i].removeprefix(block_syms[0]).removesuffix(block_syms[1])
-                if is_blockquote[i] != 0
-                else s
-            )
-        )
-        # We enumerate `lines` here to keep the indentation for code chunks.
-        for i, s in enumerate(lines)
-    ]
-    chunk_type = ["doc" if is_doc[i] else "code" for i in chunk_top_loc]
-    chunks = [
-        "".join(chunk_lines[i:j]) for i, j in zip(chunk_top_loc, chunk_bottom_loc)
-    ]
-    return chunk_type, chunks
-
-
-### Command line interface
+#### Command line interface
 def main():
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("sources", nargs="*")
-    # args = parser.parse_args()
     with open("literally.py", "r") as f:
         code = f.read()
     chunk_type, chunks = extract_chunks(code, "#", ('"""', '"""'))
-    doc_mds = [s for i, s in enumerate(chunks) if chunk_type[i] == "doc"]
-    with open("literally_docs.md", "w") as f:
-        f.write("\n".join(doc_mds))
-
-    code_chunks = [s for i, s in enumerate(chunks) if chunk_type[i] == "code"]
-    with open("literally_code.py", "w") as f:
-        f.write("".join(code_chunks))
+    readme_md = []
+    for i, s in enumerate(chunks):
+        if chunk_type[i] == "doc":
+            readme_md.append("".join(dedent(s.splitlines(keepends=True))))
+        else:
+            # we strip trailing whitespace to make the output slightly cleaner.
+            s = s.rstrip()
+            if s != "":
+                readme_md.append(f"```python\n{s}\n```\n")
+    with open("README.md", "w") as f:
+        f.write("\n".join(readme_md))
 
 
 if __name__ == "__main__":
