@@ -1,3 +1,10 @@
+html {
+  --white: #fefefe;
+  --black: #454545;
+  --ink: #252519;
+  --gray: #bebebe;
+  --code-white: #fff7ed;
+}
 * {
   box-sizing: border-box;
 }
@@ -5,16 +12,16 @@ body {
   font-family: "Palatino Linotype", "Book Antiqua", Palatino, FreeSerif, serif;
   font-size: 16px;
   line-height: 24px;
-  color: #252519;
+  color: var(--ink);
   margin: 0;
   padding: 0;
-  background-color: #fefefe;
+  background-color: var(--white);
 }
 header {
   width: 100%;
   padding: 0 0 0 1em;
-  background-color: #454545;
-  color: #fefefe;
+  background-color: var(--black);
+  color: var(--white);
 }
 h1,
 h2,
@@ -32,12 +39,19 @@ h5,
 h6 {
   padding-top: 0;
 }
-p {
+p,
+ul,
+ol {
   margin: 0 0 1em 0;
 }
 img {
   max-width: 100%;
   height: auto;
+}
+blockquote {
+  margin: 0 0 1em 0;
+  padding: 0 1em;
+  border-left: 4px solid var(--black);
 }
 section {
   display: grid;
@@ -50,11 +64,12 @@ div.code {
   transition: border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 div.doc {
-  border-color: #fefefe;
+  border-color: var(--white);
+  border-right: 1px solid var(--gray);
   padding: 0 0.5em 0 1em;
 }
 div.code {
-  border-color: #fff7ed;
+  border-color: var(--code-white);
   height: 100%;
 }
 div.highlight {
@@ -62,7 +77,7 @@ div.highlight {
 }
 section:hover > div.doc,
 section:hover > div.code {
-  border-color: #454545;
+  border-color: var(--gray);
 }
 @media (max-width: 800px) {
   section {
@@ -70,6 +85,7 @@ section:hover > div.code {
   }
   div.doc {
     border-bottom: none;
+    padding: 0.5em 2em 0.5em 2em;
   }
   div.code {
     border-top: none;
@@ -80,7 +96,7 @@ section:hover > div.code {
 }
 .octothorpe {
   font: 12px Arial;
-  color: #454545;
+  color: var(--black);
   opacity: 0;
   position: absolute;
   top: 4px;
@@ -94,27 +110,38 @@ div.doc:hover .octothorpe {
 div.code pre {
   font-size: 14px;
   margin: 0 0 0 0;
-  background-color: #fff7ed;
+  background-color: var(--code-white);
   height: 100%;
 }
 pre,
 code {
   line-height: 18px;
   font-family: Monaco, Consolas, "Lucida Console", monospace;
+  text-wrap: wrap;
+  word-break: break-all;
   margin: 0 0 1em 0;
   padding: 0 4px;
   background-color: #f0f1f2;
   border-radius: 2px;
 }
 
-/*---------------------- Syntax Highlighting -----------------------------*/
-td.linenos {
-  background-color: #f0f0f0;
-  padding-right: 10px;
+/*
+## Syntax highlighting
+This part is copied from Pycco which in turn generated it using Pygments.
+I adjusted it a little.
+*/
+span.linenos {
+  user-select: none;
+  color: #bebebe;
+  background-color: transparent;
+  padding-left: 5px;
+  padding-right: 5px;
 }
-span.lineno {
-  background-color: #f0f0f0;
-  padding: 0 5px 0 5px;
+span.linenos.special {
+  color: var(--black);
+  background-color: #ffffc0;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 body .hll {
   background-color: #ffffcc;

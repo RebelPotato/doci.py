@@ -6,7 +6,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 DOCTEST = "uv run python -m doctest doci.py"
-MAKE_DOC = "uv run doci.py -m README.md -H index.html doci.py"
+MAKE_DOC = 'uv run doci.py -m README.md -H index.html -c # -b """ """ doci.py'
+MAKE_EXE = "uvx pyinstaller -F --paths=.venv\Lib\site-packages doci.py"
 
 
 def run():
@@ -14,10 +15,12 @@ def run():
     Run and catch exceptions from the doci.py script.
     """
     try:
+        print(f"Running '{DOCTEST}'...")
         subprocess.run(
             DOCTEST.split(" "),
             check=True,
         )
+        print(f"Running '{MAKE_DOC}'...")
         subprocess.run(
             MAKE_DOC.split(" "),
             check=True,
@@ -26,25 +29,18 @@ def run():
         print(f"Error running doci.py: {e}")
 
 
-def watch(watch=False):
-    """
-    Watch files for changes and run the command.
-    """
-    if not watch:
-        # Just run the command once
-        run()
-        return
-
-    # Watch mode
-    print("Watching doci.py for changes (Ctrl+C to stop)...")
+def watch():
+    watched = ["doci.py", "doci.css", "template.html"]
+    message = f"Watching {', '.join(watched)} for changes (Ctrl+C to stop)..."
+    print(message)
 
     class LiterallyHandler(FileSystemEventHandler):
         def on_modified(self, event):
-            for file in ["doci.py", "doci.css", "template.html"]:
+            for file in watched:
                 if event.src_path.endswith(file):
-                    print(f"{file} changed, running '{MAKE_DOC}'...")
+                    print(f"{file} changed. Rebuilding...")
                     run()
-                    print("Watching for changes...")
+                    print(message)
                     break
 
     # Initial run
@@ -53,11 +49,12 @@ def watch(watch=False):
     # Set up the file watcher
     event_handler = LiterallyHandler()
     observer = Observer()
-    observer.schedule(
-        event_handler,
-        path=os.path.dirname(os.path.abspath("doci.py")),
-        recursive=False,
-    )
+    for file in watched:
+        observer.schedule(
+            event_handler,
+            path=os.path.dirname(os.path.abspath(file)),
+            recursive=False,
+        )
     observer.start()
 
     try:
@@ -68,6 +65,12 @@ def watch(watch=False):
     observer.join()
 
 
+def main():
+    if "-w" in sys.argv:
+        watch()
+    else:
+        run()
+
+
 if __name__ == "__main__":
-    watch_mode = "-w" in sys.argv
-    watch(watch=watch_mode)
+    main()
