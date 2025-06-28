@@ -84,6 +84,8 @@ the original lightweight literate programming tool. Compared to Pycco and Docco,
 <li>processes most languages, by virtue of being dumb</li>
 <li>has a customizable template that works on mobile out of the box</li>
 </ul>
+<p>Doci is written literately and generates its own documentation,
+so it should be quite easy to understand, modify and extend.</p>
 <p><img src="./assets/screenshot.png" alt="Screenshot of Doci output" /></p>
 
         </div>
@@ -111,12 +113,6 @@ would make LLMs doubly useful!</li>
 <p>So like <a href="https://github.com/pycco-docs/pycco">Pycco</a> &amp; <a href="https://github.com/jashkenas/docco">Docco</a>,
 Doci just extracts your comments into prose, stuff your code in code blocks
 and calls it a day.</p>
-<p>By itself it's quite dumb and needs to rely on other tools. For example, <code>scripts/build.py</code>
-watches <code>doci.py</code> for changes and reruns it automatically, which
-is a very simple way to add file watching abilities to Doci.
-(Maybe this is a good thing, because it means Doci is not trying to do everything by itself.)</p>
-<p>It is also well-documented. Doci is written literately and generates its own documentation,
-so it should be quite easy to read, modify and extend.</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>
@@ -144,6 +140,10 @@ and change the comment and block comment symbols accordingly.</p>
 <pre><code class="language-bash">uv run doci.py -m -H -c '//' -b '/*' '*/' script.js
 </code></pre>
 <p>will create <code>script.js.md</code> and <code>script.js.html</code> from <code>script.js</code>,</p>
+<p>By itself it's quite dumb and needs to rely on other tools. For example, <code>scripts/build.py</code>
+watches <code>doci.py</code> for changes and reruns it automatically, which
+is a very simple way to add file watching abilities to Doci.
+(Maybe this is a good thing, Doci is not trying to do everything by itself ;)</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>
@@ -364,7 +364,7 @@ It uses the file's extension to determine the language if not specified.</p>
         </div>
         <div class="code"><div class="highlight"><pre>    <span class="n">lang</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span> <span class="k">else</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">markdown_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">markdown_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">markdown_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;# </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">to_markdown</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">lang</span><span class="p">))</span>
 
@@ -379,10 +379,14 @@ It uses the file's extension to determine the language if not specified.</p>
           <p>Formatting HTML needs a template.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>        <span class="n">template_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">else</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;template.html&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <div class="code"><div class="highlight"><pre>        <span class="n">template_file</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">template</span>
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span>
+            <span class="k">else</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;template.html&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">with</span> <span class="n">template_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">template</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="n">html_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">html_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">html_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
                 <span class="n">to_html</span><span class="p">(</span>
@@ -825,7 +829,7 @@ with a piece of divider text in between,</p>
         <div class="code"><div class="highlight"><pre>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--markdown&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">),</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">),</span>
         <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span>
         <span class="n">const</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;generate markdown output&quot;</span><span class="p">,</span>
@@ -833,7 +837,7 @@ with a piece of divider text in between,</p>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;-H&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--html&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">),</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">),</span>
         <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span>
         <span class="n">const</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;generate HTML output&quot;</span><span class="p">,</span>
@@ -841,7 +845,7 @@ with a piece of divider text in between,</p>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;-t&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--template&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">),</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">),</span>
         <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span>
         <span class="n">const</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;HTML template file&quot;</span><span class="p">,</span>
@@ -880,7 +884,10 @@ with a piece of divider text in between,</p>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">),</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;source file to process&quot;</span>
+        <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">),</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;source file to process&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 

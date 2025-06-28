@@ -10,6 +10,9 @@
 # * processes most languages, by virtue of being dumb
 # * has a customizable template that works on mobile out of the box
 #
+# Doci is written literately and generates its own documentation,
+# so it should be quite easy to understand, modify and extend.
+#
 # ![Screenshot of Doci output](./assets/screenshot.png)
 
 # ## Rationale
@@ -29,14 +32,6 @@
 # So like [Pycco](https://github.com/pycco-docs/pycco) & [Docco](https://github.com/jashkenas/docco),
 # Doci just extracts your comments into prose, stuff your code in code blocks
 # and calls it a day.
-#
-# By itself it's quite dumb and needs to rely on other tools. For example, `scripts/build.py`
-# watches `doci.py` for changes and reruns it automatically, which
-# is a very simple way to add file watching abilities to Doci.
-# (Maybe this is a good thing, because it means Doci is not trying to do everything by itself.)
-#
-# It is also well-documented. Doci is written literately and generates its own documentation,
-# so it should be quite easy to read, modify and extend.
 
 # ## Usage
 #
@@ -65,6 +60,10 @@
 # ```
 # will create `script.js.md` and `script.js.html` from `script.js`,
 #
+# By itself it's quite dumb and needs to rely on other tools. For example, `scripts/build.py`
+# watches `doci.py` for changes and reruns it automatically, which
+# is a very simple way to add file watching abilities to Doci.
+# (Maybe this is a good thing, Doci is not trying to do everything by itself ;)
 
 # ## Dependencies
 import re
@@ -136,16 +135,20 @@ def main():
     # It uses the file's extension to determine the language if not specified.
     lang = args.language[0] if args.language else file.name.split(".")[-1]
     if args.markdown is not None:
-        markdown_file = args.markdown or open(f"{file.name}.md", "w")
+        markdown_file = args.markdown or open(f"{file.name}.md", "w", encoding="utf8")
         with markdown_file as f:
             f.write(f"# {file.name}\n\n" + to_markdown(chunk_type, chunks, lang))
 
     if args.html is not None:
         # Formatting HTML needs a template.
-        template_file = args.template if args.template else open("template.html", "r")
+        template_file = (
+            args.template
+            if args.template
+            else open("template.html", "r", encoding="utf8")
+        )
         with template_file as f:
             template = f.read()
-        html_file = args.html or open(f"{file.name}.html", "w")
+        html_file = args.html or open(f"{file.name}.html", "w", encoding="utf8")
         with html_file as f:
             f.write(
                 to_html(
@@ -364,7 +367,7 @@ def parse_args():
     parser.add_argument(
         "-m",
         "--markdown",
-        type=argparse.FileType("w"),
+        type=argparse.FileType("w", encoding="utf8"),
         nargs="?",
         const=False,
         help="generate markdown output",
@@ -372,7 +375,7 @@ def parse_args():
     parser.add_argument(
         "-H",
         "--html",
-        type=argparse.FileType("w"),
+        type=argparse.FileType("w", encoding="utf8"),
         nargs="?",
         const=False,
         help="generate HTML output",
@@ -380,7 +383,7 @@ def parse_args():
     parser.add_argument(
         "-t",
         "--template",
-        type=argparse.FileType("r"),
+        type=argparse.FileType("r", encoding="utf8"),
         nargs="?",
         const=False,
         help="HTML template file",
@@ -410,7 +413,10 @@ def parse_args():
         default=None,
     )
     parser.add_argument(
-        "file", type=argparse.FileType("r"), nargs=1, help="source file to process"
+        "file",
+        type=argparse.FileType("r", encoding="utf8"),
+        nargs=1,
+        help="source file to process",
     )
     return parser.parse_args()
 
