@@ -5,14 +5,14 @@ import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-DOCTEST = "uv run python -m doctest doci.py"
-MAKE_DOC = 'uv run doci.py -m README.md -H index.html -c # -b """ """ doci.py'
-MAKE_EXE = "uvx pyinstaller -F --paths=.venv\Lib\site-packages doci.py"
+DOCTEST = "uv run python -m doctest dok.py"
+MAKE_DOC = 'uv run dok.py -m README.md -H index.html -c # -b """ """ dok.py'
+MAKE_EXE = "uvx pyinstaller -F --paths=.venv\Lib\site-packages dok.py"
 
 
 def run():
     """
-    Run and catch exceptions from the doci.py script.
+    Run and catch exceptions from the dok.py script.
     """
     try:
         print(f"Running '{DOCTEST}'...")
@@ -26,11 +26,11 @@ def run():
             check=True,
         )
     except subprocess.CalledProcessError as e:
-        print(f"Error running doci.py: {e}")
+        print(f"Error running dok.py: {e}")
 
 
 def watch():
-    watched = ["doci.py", "doci.css", "template.html"]
+    watched = ["dok.py", "dok.css", "template.html"]
     message = f"Watching {', '.join(watched)} for changes (Ctrl+C to stop)..."
     print(message)
 
