@@ -1,4 +1,4 @@
-# Doci is a quick and dirty tool for turning your script into documentation
+# [Doci](https://rebelpotato.github.io/doci.py/) is a quick and dirty tool for turning your script into documentation
 # that show explainations and code side by side, a.k.a. "semi-[literate programming](https://en.wikipedia.org/wiki/Literate_programming)".
 # It is simple and language agnostic.
 #
@@ -35,7 +35,7 @@
 # is a very simple way to add file watching abilities to Doci.
 # (Maybe this is a good thing, because it means Doci is not trying to do everything by itself.)
 #
-# It is also well-documented. Doci is <350 lines of code plus comments and generates its own documentation,
+# It is also well-documented. Doci is written literately and generates its own documentation,
 # so it should be quite easy to read, modify and extend.
 
 # ## Usage
@@ -52,8 +52,19 @@
 # uv run doci.py -m README.md -H index.html -c '#' -b '""""""""' '""""""""' doci.py
 # ```
 #
-# which will generate `README.md` and `index.html` from `doci.py`,
-# given that `template.html` exists in the same folder.
+# This tells Doci to read its own source `doci.py`, treat `#` as comment start
+# and `"""` as block comment delimiters, and generate `README.md` and `index.html`
+# from it, given that the default html template `template.html` exists in the same folder.
+#
+# For other languages, use `-l(--language)` to specify the language name for syntax highlighting,
+# and change the comment and block comment symbols accordingly.
+#
+# If you're using javascript for instance:
+# ```bash
+# uv run doci.py -m -H -c '//' -b '/*' '*/' script.js
+# ```
+# will create `script.js.md` and `script.js.html` from `script.js`,
+#
 
 # ## Dependencies
 import re
@@ -71,100 +82,94 @@ from typing import List, Tuple
 # The following terms are used throughout the code, and are important to understand how Doci works:
 #
 # * line: a string that contains only one newline character `\n`, which should be the string's last character.
-# * chunk: a list of lines.
+# * chunk: consecutive lines in a list of lines. We can represent it as a list of lines ...
 SOME_LINE = "This is a line.\n"
 SOME_CHUNK = [
     "This is not a line,\n",
     "But a chunk.\n",
     "It can be split into three lines.\n",
 ]
+ANOTHER_CHUNK = SOME_CHUNK[1:3]
+# But an index-offset tuple works as well.
+A_THIRD_CHUNK = (SOME_CHUNK, 1, 3)
 # * content: a line stripped of leading and trailing whitespaces and line breaks.
 SOME_CONTENT = SOME_LINE.strip()
 assert SOME_CONTENT == "This is a line."
 # * comment: a line whose content starts with a comment symbol, e.g. `#` in Python.
-SOME_COMMENT = "# This is a comment.\n"
-# * block comment line: a line that starts or ends a block comment.
+SOME_COMMENT = "    # This is a comment.\n"
+# * block comment boundary: a line that starts or ends a block comment.
 #
 # Its content either starts with a block comment start symbol,
-SOME_BLOCK_START = '""" Block comment start.\n'
+SOME_BLOCK_START = '    """ Block comment start.\n'
 # ends with a block comment end symbol,
-SOME_BLOCK_END = 'Block comment end. """\n'
-# or both. (Will support later...)
-SOME_BLOCK_BOTH = '""" Block comment start and end. """\n'
+SOME_BLOCK_END = '    Block comment end. """\n'
+# or both. (These don't show up in the output for now...)
+SOME_BLOCK_BOTH = '    """ Block comment start and end. """\n'
+# * block comment: a line surrounded by block comment boundaries.
+#
+# ``` python
+# """ This line is a block comment boundary, not a block comment,
+# but this line is.
+# """
+# ```
 
-# ## [TODO: Main function]
-# I should move the main function here, and write an introduction
-# to how Doci works conceptually...
 
-
-#### Utility functions
-def running(f, iterable, init=None):
+# ## Main
+def main():
     """
-    `running` calculates a running value from an iterable using a binary function `f`.
+    `main` is Doci's main function. Conceptually, Doci is quite simple.
     """
-    for x in iterable:
-        init = x if init is None else f(init, x)
-        yield init
+    args = parse_args()
+    # First, it reads a source file, separates it into lines,
+    file = args.file[0]
+    with file as f:
+        lines = f.readlines()
+    # then extracts chunks of code and documentation from the lines.
+    comment_sym = args.comment[0]
+    # Block comments are optional.
+    block_syms = tuple(args.block) if args.block else None
+    # Chunks that only contain comments and block comments are labeled as documentation,
+    # and all the rest are code chunks.
+    chunk_type, chunks, chunk_locs = extract_chunks(lines, comment_sym, block_syms)
+
+    # After that, it formats the chunks and produce markdown and/or HTML.
+    # It uses the file's extension to determine the language if not specified.
+    lang = args.language[0] if args.language else file.name.split(".")[-1]
+    if args.markdown is not None:
+        markdown_file = args.markdown or open(f"{file.name}.md", "w")
+        with markdown_file as f:
+            f.write(f"# {file.name}\n\n" + to_markdown(chunk_type, chunks, lang))
+
+    if args.html is not None:
+        # Formatting HTML needs a template.
+        template_file = args.template if args.template else open("template.html", "r")
+        with template_file as f:
+            template = f.read()
+        html_file = args.html or open(f"{file.name}.html", "w")
+        with html_file as f:
+            f.write(
+                to_html(
+                    chunk_type=chunk_type,
+                    chunks=chunks,
+                    chunk_locs=chunk_locs,
+                    language=lang,
+                    comment_sym=comment_sym,
+                    file_name=file.name,
+                    template=template,
+                )
+            )
+    # And that's it!
 
 
-def running_sum(iterable, init=None):
-    """
-    `running_sum` calculates the running sum of an iterable.
-
-    ``` py
-    >>> list(running_sum(range(5)))
-    [0, 1, 3, 6, 10]
-
-    >>> list(running_sum(range(5), 10))
-    [10, 11, 13, 16, 20]
-
-    ```
-    """
-    return running(lambda x, y: x + y, iterable, init)
-
-
-def leading_count(char: str, s: str) -> int:
-    """
-    `leading_count` counts the number of leading characters `char` in a string `s`.
-    """
-    for i, c in enumerate(s):
-        if c != char:
-            return i
-    return len(s)
-
-
-def dedent(s: List[str]) -> List[str]:
-    """
-    `dedent` dedents a list of strings, removing the minimum leading whitespace
-    from all visible lines. Invisible lines (empty or whitespace-only)
-    are left unchanged.
-
-    ``` py
-    >>> dedent(["    4 spaces", "  2 spaces", "", "   3 spaces"])
-    ['  4 spaces', '2 spaces', '', ' 3 spaces']
-
-    ```
-    """
-    stripped = [line.strip() for line in s]
-    min_indent = min(
-        (leading_count(" ", line) for line, st in zip(s, stripped) if st != ""),
-        default=None,
-    )
-    if min_indent is None:
-        return s
-    return [line[min_indent:] if st != "" else line for line, st in zip(s, stripped)]
-
-
-#### Extracting chunks
+# ## Extracting chunks
 def extract_chunks(
-    code: str, comment_sym: str, block_syms: Tuple[str, str] | None = None
+    lines: List[str], comment_sym: str, block_syms: Tuple[str, str] | None = None
 ) -> Tuple[List[str], List[List[str]], List[int]]:
     """
     `extract_chunks` extracts doc and code chunks from a program. We return a list of chunks,
     a list of strings indicating each chunk's type (doc or code),
     and a list of locations of the top of each chunk.
     """
-    lines = code.splitlines(keepends=True)
     lc = len(lines)  # line count
     # Contents are lines stripped from leading and trailing whitespaces and line breaks.
     contents = [line.strip() for line in lines]
@@ -236,8 +241,89 @@ def parse_block_comment(
     return is_block_comment, level
 
 
-#### Formatting
+# ## Formatting
+def to_markdown(chunk_type: List[str], chunks: List[List[str]], language: str) -> str:
+    """
+    `to_markdown` convert chunks to markdown. It is quite simple!
+    """
+    md = []
+    for i, chunk in enumerate(chunks):
+        if chunk_type[i] == "doc":
+            # For markdown, we dedent doc chunks for better readability.
+            md.append("".join(dedent(chunk)))
+        else:
+            # We strip trailing spaces and newlines off code chunks, so that
+            # each code block ends with actual code instead of empty lines.
+            stripped = "".join(chunk).rstrip()
+            if stripped != "":
+                md.append(f"```{language}\n{stripped}\n```\n")
+    return "\n".join(md)
+
+
+# HTML's more tricky though, because it needs styling and formatting.
+# We use pygments for code highlighting and markdown-it for markdown formatting.
+# For markdown, we use the commonmark spec with tables and footnotes enabled.
 HTML_FORMATTER = pygments.formatters.HtmlFormatter()
+MD = MarkdownIt("commonmark").use(footnote_plugin).enable("table")
+
+
+def to_html(
+    chunk_type: List[str],
+    chunks: List[List[str]],
+    chunk_locs: List[int],
+    language: str,
+    comment_sym: str,
+    file_name: str,
+    template: str,
+) -> str:
+    """
+    `to_html` convert chunks to HTML. This function is quite big for now,
+    need to break it down into smaller functions soon.
+    """
+    code_locs = [i for i, t in enumerate(chunk_type) if t == "code"]
+    code_html = highlight(
+        code_chunks=[chunks[i] for i in code_locs],
+        chunk_locs=[chunk_locs[i] for i in code_locs],
+        language=language,
+        comment_sym=comment_sym,
+    )
+
+    docs_locs = [i for i, t in enumerate(chunk_type) if t == "doc"]
+    docs_html = [MD.render("".join(chunks[i])) for i in docs_locs]
+
+    # Join the code and doc html strings together.
+    html = [""] * len(chunks)
+    for i, v in zip(code_locs, code_html):
+        html[i] = v
+    for i, v in zip(docs_locs, docs_html):
+        html[i] = v
+    # This pairing is set up, so that two consecutive chunks of the same type
+    # remain together in the output view.
+    sections = []
+    doc, code = "", ""
+    for i, s in enumerate(html):
+        if chunk_type[i] == "doc" and doc != "":
+            sections.append((doc, code))
+            doc, code = "", ""
+        elif chunk_type[i] == "code" and code != "":
+            sections.append((doc, code))
+            doc, code = "", ""
+        doc, code = (s, code) if chunk_type[i] == "doc" else (doc, s)
+    sections.append((doc, code))
+    return pystache.render(
+        template,
+        {
+            "title": file_name,
+            "sections": [
+                {
+                    "num": i + 1,
+                    "doc": doc,
+                    "code": code,
+                }
+                for i, (doc, code) in enumerate(sections)
+            ],
+        },
+    )
 
 
 def highlight(
@@ -270,86 +356,9 @@ def highlight(
     return htmls
 
 
-def to_markdown(chunk_type: List[str], chunks: List[List[str]], language: str) -> str:
-    """
-    `to_markdown` convert chunks to markdown.
-    """
-    md = []
-    for i, chunk in enumerate(chunks):
-        if chunk_type[i] == "doc":
-            # For markdown, we dedent doc chunks for better readability.
-            md.append("".join(dedent(chunk)))
-        else:
-            # We strip trailing spaces and newlines off code chunks, so that
-            # each code block ends with actual code instead of empty lines.
-            stripped = "".join(chunk).rstrip()
-            if stripped != "":
-                md.append(f"```{language}\n{stripped}\n```\n")
-    return "\n".join(md)
-
-
-def to_html(
-    chunk_type: List[str],
-    chunks: List[List[str]],
-    chunk_locs: List[int],
-    language: str,
-    comment_sym: str,
-    file_name: str,
-    template: str,
-) -> str:
-    """
-    `to_html` convert chunks to HTML.
-    """
-    # Code is parsed using pygments.
-    code_locs = [i for i, t in enumerate(chunk_type) if t == "code"]
-    code_html = highlight(
-        code_chunks=[chunks[i] for i in code_locs],
-        chunk_locs=[chunk_locs[i] for i in code_locs],
-        language=language,
-        comment_sym=comment_sym,
-    )
-
-    # Docs are parsed using markdown-it according to the commonmark spec
-    # with tables and footnotes enabled.
-    docs_locs = [i for i, t in enumerate(chunk_type) if t == "doc"]
-    md = MarkdownIt("commonmark").use(footnote_plugin).enable("table")
-    docs_html = [md.render("".join(chunks[i])) for i in docs_locs]
-
-    html = [""] * len(chunks)
-    for i, v in zip(code_locs, code_html):
-        html[i] = v
-    for i, v in zip(docs_locs, docs_html):
-        html[i] = v
-    # Pair the doc and code chunks together.
-    sections = []
-    doc, code = "", ""
-    for i, s in enumerate(html):
-        if chunk_type[i] == "doc" and doc != "":
-            sections.append((doc, code))
-            doc, code = "", ""
-        elif chunk_type[i] == "code" and code != "":
-            sections.append((doc, code))
-            doc, code = "", ""
-        doc, code = (s, code) if chunk_type[i] == "doc" else (doc, s)
-    sections.append((doc, code))
-    return pystache.render(
-        template,
-        {
-            "title": file_name,
-            "sections": [
-                {
-                    "num": i + 1,
-                    "doc": doc,
-                    "code": code,
-                }
-                for i, (doc, code) in enumerate(sections)
-            ],
-        },
-    )
-
-
-#### Command line interface
-def main():
+# ## Appendix
+# ### Command line interface
+def parse_args():
     parser = argparse.ArgumentParser(description="A simple literate programming tool.")
     # TODO: add rationale for the arguments
     parser.add_argument(
@@ -403,39 +412,65 @@ def main():
     parser.add_argument(
         "file", type=argparse.FileType("r"), nargs=1, help="source file to process"
     )
-    args = parser.parse_args()
-    file = args.file[0]
-    # We use the file's extension to determine the language if not specified.
-    lang = args.language[0] if args.language else file.name.split(".")[-1]
-    comment_sym = args.comment[0]
-    block_syms = tuple(args.block) if args.block else None
+    return parser.parse_args()
 
-    with file as f:
-        code = f.read()
-    chunk_type, chunks, chunk_locs = extract_chunks(code, comment_sym, block_syms)
 
-    if args.markdown:
-        markdown_file = args.markdown or open(f"{file.name}.md", "w")
-        with markdown_file as f:
-            f.write(f"# {file.name}\n\n" + to_markdown(chunk_type, chunks, lang))
+# ### Utility functions
+def running(f, iterable, init=None):
+    """
+    `running` calculates a running value from an iterable using a binary function `f`.
+    """
+    for x in iterable:
+        init = x if init is None else f(init, x)
+        yield init
 
-    if args.html:
-        template_file = args.template if args.template else open("template.html", "r")
-        with template_file as f:
-            template = f.read()
-        html_file = args.html or open(f"{file.name}.html", "w")
-        with html_file as f:
-            f.write(
-                to_html(
-                    chunk_type=chunk_type,
-                    chunks=chunks,
-                    chunk_locs=chunk_locs,
-                    language=lang,
-                    comment_sym=comment_sym,
-                    file_name=file.name,
-                    template=template,
-                )
-            )
+
+def running_sum(iterable, init=None):
+    """
+    `running_sum` calculates the running sum of an iterable.
+
+    ``` py
+    >>> list(running_sum(range(5)))
+    [0, 1, 3, 6, 10]
+
+    >>> list(running_sum(range(5), 10))
+    [10, 11, 13, 16, 20]
+
+    ```
+    """
+    return running(lambda x, y: x + y, iterable, init)
+
+
+def leading_count(char: str, s: str) -> int:
+    """
+    `leading_count` counts the number of leading characters `char` in a string `s`.
+    """
+    for i, c in enumerate(s):
+        if c != char:
+            return i
+    return len(s)
+
+
+def dedent(s: List[str]) -> List[str]:
+    """
+    `dedent` dedents a list of strings, removing the minimum leading whitespace
+    from all visible lines. Invisible lines (empty or whitespace-only)
+    are left unchanged.
+
+    ``` py
+    >>> dedent(["    4 spaces", "  2 spaces", "", "   3 spaces"])
+    ['  4 spaces', '2 spaces', '', ' 3 spaces']
+
+    ```
+    """
+    stripped = [line.strip() for line in s]
+    min_indent = min(
+        (leading_count(" ", line) for line, st in zip(s, stripped) if st != ""),
+        default=None,
+    )
+    if min_indent is None:
+        return s
+    return [line[min_indent:] if st != "" else line for line, st in zip(s, stripped)]
 
 
 ### Finally, start the script

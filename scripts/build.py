@@ -41,7 +41,7 @@ def watch():
                     print(f"{file} changed. Rebuilding...")
                     run()
                     print(message)
-                    break
+                    return
 
     # Initial run
     run()

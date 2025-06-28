@@ -73,7 +73,7 @@
           <div class="octowrap">
             <a class="octothorpe" href="#section-1">#</a>
           </div>
-          <p>Doci is a quick and dirty tool for turning your script into documentation
+          <p><a href="https://rebelpotato.github.io/doci.py/">Doci</a> is a quick and dirty tool for turning your script into documentation
 that show explainations and code side by side, a.k.a. &quot;semi-<a href="https://en.wikipedia.org/wiki/Literate_programming">literate programming</a>&quot;.
 It is simple and language agnostic.</p>
 <p>This is very much a remix of <a href="https://github.com/pycco-docs/pycco">Pycco</a>,
@@ -115,7 +115,7 @@ and calls it a day.</p>
 watches <code>doci.py</code> for changes and reruns it automatically, which
 is a very simple way to add file watching abilities to Doci.
 (Maybe this is a good thing, because it means Doci is not trying to do everything by itself.)</p>
-<p>It is also well-documented. Doci is &lt;350 lines of code plus comments and generates its own documentation,
+<p>It is also well-documented. Doci is written literately and generates its own documentation,
 so it should be quite easy to read, modify and extend.</p>
 
         </div>
@@ -135,8 +135,15 @@ so it should be quite easy to read, modify and extend.</p>
 <pre><code class="language-powershell"># note the horrendous quoting
 uv run doci.py -m README.md -H index.html -c '#' -b '&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;' '&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;' doci.py
 </code></pre>
-<p>which will generate <code>README.md</code> and <code>index.html</code> from <code>doci.py</code>,
-given that <code>template.html</code> exists in the same folder.</p>
+<p>This tells Doci to read its own source <code>doci.py</code>, treat <code>#</code> as comment start
+and <code>&quot;&quot;&quot;</code> as block comment delimiters, and generate <code>README.md</code> and <code>index.html</code>
+from it, given that the default html template <code>template.html</code> exists in the same folder.</p>
+<p>For other languages, use <code>-l(--language)</code> to specify the language name for syntax highlighting,
+and change the comment and block comment symbols accordingly.</p>
+<p>If you're using javascript for instance:</p>
+<pre><code class="language-bash">uv run doci.py -m -H -c '//' -b '/*' '*/' script.js
+</code></pre>
+<p>will create <code>script.js.md</code> and <code>script.js.html</code> from <code>script.js</code>,</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>
@@ -171,7 +178,7 @@ given that <code>template.html</code> exists in the same folder.</p>
 <p>The following terms are used throughout the code, and are important to understand how Doci works:</p>
 <ul>
 <li>line: a string that contains only one newline character <code>\n</code>, which should be the string's last character.</li>
-<li>chunk: a list of lines.</li>
+<li>chunk: consecutive lines in a list of lines. We can represent it as a list of lines ...</li>
 </ul>
 
         </div>
@@ -181,12 +188,24 @@ given that <code>template.html</code> exists in the same folder.</p>
     <span class="s2">&quot;But a chunk.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
     <span class="s2">&quot;It can be split into three lines.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
 <span class="p">]</span>
+<span class="n">ANOTHER_CHUNK</span> <span class="o">=</span> <span class="n">SOME_CHUNK</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
 </pre></div></div>
       </section>
       <section id="section-6">
         <div class="doc">
           <div class="octowrap">
             <a class="octothorpe" href="#section-6">#</a>
+          </div>
+          <p>But an index-offset tuple works as well.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre><span class="n">A_THIRD_CHUNK</span> <span class="o">=</span> <span class="p">(</span><span class="n">SOME_CHUNK</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div></div>
+      </section>
+      <section id="section-7">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-7">#</a>
           </div>
           <ul>
 <li>content: a line stripped of leading and trailing whitespaces and line breaks.</li>
@@ -197,31 +216,17 @@ given that <code>template.html</code> exists in the same folder.</p>
 <span class="k">assert</span> <span class="n">SOME_CONTENT</span> <span class="o">==</span> <span class="s2">&quot;This is a line.&quot;</span>
 </pre></div></div>
       </section>
-      <section id="section-7">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-7">#</a>
-          </div>
-          <ul>
-<li>comment: a line whose content starts with a comment symbol, e.g. <code>#</code> in Python.</li>
-</ul>
-
-        </div>
-        <div class="code"><div class="highlight"><pre><span class="n">SOME_COMMENT</span> <span class="o">=</span> <span class="s2">&quot;# This is a comment.</span><span class="se">\n</span><span class="s2">&quot;</span>
-</pre></div></div>
-      </section>
       <section id="section-8">
         <div class="doc">
           <div class="octowrap">
             <a class="octothorpe" href="#section-8">#</a>
           </div>
           <ul>
-<li>block comment line: a line that starts or ends a block comment.</li>
+<li>comment: a line whose content starts with a comment symbol, e.g. <code>#</code> in Python.</li>
 </ul>
-<p>Its content either starts with a block comment start symbol,</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_START</span> <span class="o">=</span> <span class="s1">&#39;&quot;&quot;&quot; Block comment start.</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <div class="code"><div class="highlight"><pre><span class="n">SOME_COMMENT</span> <span class="o">=</span> <span class="s2">&quot;    # This is a comment.</span><span class="se">\n</span><span class="s2">&quot;</span>
 </pre></div></div>
       </section>
       <section id="section-9">
@@ -229,10 +234,13 @@ given that <code>template.html</code> exists in the same folder.</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-9">#</a>
           </div>
-          <p>ends with a block comment end symbol,</p>
+          <ul>
+<li>block comment boundary: a line that starts or ends a block comment.</li>
+</ul>
+<p>Its content either starts with a block comment start symbol,</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_END</span> <span class="o">=</span> <span class="s1">&#39;Block comment end. &quot;&quot;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_START</span> <span class="o">=</span> <span class="s1">&#39;    &quot;&quot;&quot; Block comment start.</span><span class="se">\n</span><span class="s1">&#39;</span>
 </pre></div></div>
       </section>
       <section id="section-10">
@@ -240,11 +248,10 @@ given that <code>template.html</code> exists in the same folder.</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-10">#</a>
           </div>
-          <p>or both. (Will support later...)</p>
+          <p>ends with a block comment end symbol,</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_BOTH</span> <span class="o">=</span> <span class="s1">&#39;&quot;&quot;&quot; Block comment start and end. &quot;&quot;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
-
+        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_END</span> <span class="o">=</span> <span class="s1">&#39;    Block comment end. &quot;&quot;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
 </pre></div></div>
       </section>
       <section id="section-11">
@@ -252,13 +259,10 @@ given that <code>template.html</code> exists in the same folder.</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-11">#</a>
           </div>
-          <h2>[TODO: Main function]</h2>
-<p>I should move the main function here, and write an introduction
-to how Doci works conceptually...</p>
+          <p>or both. (These don't show up in the output for now...)</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>
-
+        <div class="code"><div class="highlight"><pre><span class="n">SOME_BLOCK_BOTH</span> <span class="o">=</span> <span class="s1">&#39;    &quot;&quot;&quot; Block comment start and end. &quot;&quot;&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
 </pre></div></div>
       </section>
       <section id="section-12">
@@ -266,10 +270,17 @@ to how Doci works conceptually...</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-12">#</a>
           </div>
-          <h3>Utility functions</h3>
+          <ul>
+<li>block comment: a line surrounded by block comment boundaries.</li>
+</ul>
+<pre><code class="language-python">&quot;&quot;&quot; This line is a block comment boundary, not a block comment,
+but this line is.
+&quot;&quot;&quot;
+</code></pre>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">running</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <div class="code"><div class="highlight"><pre>
+
 </pre></div></div>
       </section>
       <section id="section-13">
@@ -277,15 +288,10 @@ to how Doci works conceptually...</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-13">#</a>
           </div>
-          <p><code>running</code> calculates a running value from an iterable using a binary function <code>f</code>.</p>
+          <h2>Main</h2>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
-        <span class="n">init</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="n">init</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f</span><span class="p">(</span><span class="n">init</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="k">yield</span> <span class="n">init</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">running_sum</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 </pre></div></div>
       </section>
       <section id="section-14">
@@ -293,20 +299,10 @@ to how Doci works conceptually...</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-14">#</a>
           </div>
-          <p><code>running_sum</code> calculates the running sum of an iterable.</p>
-<pre><code class="language-py">&gt;&gt;&gt; list(running_sum(range(5)))
-[0, 1, 3, 6, 10]
-
-&gt;&gt;&gt; list(running_sum(range(5), 10))
-[10, 11, 13, 16, 20]
-
-</code></pre>
+          <p><code>main</code> is Doci's main function. Conceptually, Doci is quite simple.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="k">return</span> <span class="n">running</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">leading_count</span><span class="p">(</span><span class="n">char</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
 </pre></div></div>
       </section>
       <section id="section-15">
@@ -314,16 +310,12 @@ to how Doci works conceptually...</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-15">#</a>
           </div>
-          <p><code>leading_count</code> counts the number of leading characters <code>char</code> in a string <code>s</code>.</p>
+          <p>First, it reads a source file, separates it into lines,</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">char</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">i</span>
-    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">dedent</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
 </pre></div></div>
       </section>
       <section id="section-16">
@@ -331,25 +323,10 @@ to how Doci works conceptually...</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-16">#</a>
           </div>
-          <p><code>dedent</code> dedents a list of strings, removing the minimum leading whitespace
-from all visible lines. Invisible lines (empty or whitespace-only)
-are left unchanged.</p>
-<pre><code class="language-py">&gt;&gt;&gt; dedent([&quot;    4 spaces&quot;, &quot;  2 spaces&quot;, &quot;&quot;, &quot;   3 spaces&quot;])
-['  4 spaces', '2 spaces', '', ' 3 spaces']
-
-</code></pre>
+          <p>then extracts chunks of code and documentation from the lines.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">stripped</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">s</span><span class="p">]</span>
-    <span class="n">min_indent</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">leading_count</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">stripped</span><span class="p">)</span> <span class="k">if</span> <span class="n">st</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="n">min_indent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">s</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">line</span><span class="p">[</span><span class="n">min_indent</span><span class="p">:]</span> <span class="k">if</span> <span class="n">st</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="k">else</span> <span class="n">line</span> <span class="k">for</span> <span class="n">line</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">stripped</span><span class="p">)]</span>
-
-
+        <div class="code"><div class="highlight"><pre>    <span class="n">comment_sym</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">comment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div></div>
       </section>
       <section id="section-17">
@@ -357,12 +334,10 @@ are left unchanged.</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-17">#</a>
           </div>
-          <h3>Extracting chunks</h3>
+          <p>Block comments are optional.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">extract_chunks</span><span class="p">(</span>
-    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">comment_sym</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">block_syms</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">block_syms</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">block</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">block</span> <span class="k">else</span> <span class="kc">None</span>
 </pre></div></div>
       </section>
       <section id="section-18">
@@ -370,19 +345,100 @@ are left unchanged.</p>
           <div class="octowrap">
             <a class="octothorpe" href="#section-18">#</a>
           </div>
-          <p><code>extract_chunks</code> extracts doc and code chunks from a program. We return a list of chunks,
-a list of strings indicating each chunk's type (doc or code),
-and a list of locations of the top of each chunk.</p>
+          <p>Chunks that only contain comments and block comments are labeled as documentation,
+and all the rest are code chunks.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">lines</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="n">keepends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">lc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>  <span class="c1"># line count</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">chunk_type</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_locs</span> <span class="o">=</span> <span class="n">extract_chunks</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">comment_sym</span><span class="p">,</span> <span class="n">block_syms</span><span class="p">)</span>
+
 </pre></div></div>
       </section>
       <section id="section-19">
         <div class="doc">
           <div class="octowrap">
             <a class="octothorpe" href="#section-19">#</a>
+          </div>
+          <p>After that, it formats the chunks and produce markdown and/or HTML.
+It uses the file's extension to determine the language if not specified.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">lang</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span> <span class="k">else</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">markdown_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">markdown_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;# </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">to_markdown</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">lang</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</pre></div></div>
+      </section>
+      <section id="section-20">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-20">#</a>
+          </div>
+          <p>Formatting HTML needs a template.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>        <span class="n">template_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">else</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;template.html&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">template_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">html_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">html_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="n">to_html</span><span class="p">(</span>
+                    <span class="n">chunk_type</span><span class="o">=</span><span class="n">chunk_type</span><span class="p">,</span>
+                    <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span>
+                    <span class="n">chunk_locs</span><span class="o">=</span><span class="n">chunk_locs</span><span class="p">,</span>
+                    <span class="n">language</span><span class="o">=</span><span class="n">lang</span><span class="p">,</span>
+                    <span class="n">comment_sym</span><span class="o">=</span><span class="n">comment_sym</span><span class="p">,</span>
+                    <span class="n">file_name</span><span class="o">=</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+</pre></div></div>
+      </section>
+      <section id="section-21">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-21">#</a>
+          </div>
+          <p>And that's it!</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>
+
+</pre></div></div>
+      </section>
+      <section id="section-22">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-22">#</a>
+          </div>
+          <h2>Extracting chunks</h2>
+
+        </div>
+        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">extract_chunks</span><span class="p">(</span>
+    <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">comment_sym</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">block_syms</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+</pre></div></div>
+      </section>
+      <section id="section-23">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-23">#</a>
+          </div>
+          <p><code>extract_chunks</code> extracts doc and code chunks from a program. We return a list of chunks,
+a list of strings indicating each chunk's type (doc or code),
+and a list of locations of the top of each chunk.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">lc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>  <span class="c1"># line count</span>
+</pre></div></div>
+      </section>
+      <section id="section-24">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-24">#</a>
           </div>
           <p>Contents are lines stripped from leading and trailing whitespaces and line breaks.</p>
 
@@ -397,10 +453,10 @@ and a list of locations of the top of each chunk.</p>
 
 </pre></div></div>
       </section>
-      <section id="section-20">
+      <section id="section-25">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-20">#</a>
+            <a class="octothorpe" href="#section-25">#</a>
           </div>
           <p>Chunks are consecutive lines of the same type. Docs are chunks that are comments.</p>
 
@@ -410,10 +466,10 @@ and a list of locations of the top of each chunk.</p>
     <span class="p">]</span>
 </pre></div></div>
       </section>
-      <section id="section-21">
+      <section id="section-26">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-21">#</a>
+            <a class="octothorpe" href="#section-26">#</a>
           </div>
           <p>As a result, chunks are always interspersed, which means
 for each two doc chunks there is a code chunk in between, and vice versa.
@@ -426,10 +482,10 @@ So changes in chunk type marks the start of a new chunk.</p>
 
 </pre></div></div>
       </section>
-      <section id="section-22">
+      <section id="section-27">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-22">#</a>
+            <a class="octothorpe" href="#section-27">#</a>
           </div>
           <p>Doc chunks are stripped of its starting symbols and whitespaces,
 while code chunks are left as is.</p>
@@ -441,10 +497,10 @@ while code chunks are left as is.</p>
         <span class="k">if</span> <span class="n">is_block_comment</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
 </pre></div></div>
       </section>
-      <section id="section-23">
+      <section id="section-28">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-23">#</a>
+            <a class="octothorpe" href="#section-28">#</a>
           </div>
           <p>We ignore all block comment lines!</p>
 
@@ -465,10 +521,10 @@ while code chunks are left as is.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
 </pre></div></div>
       </section>
-      <section id="section-24">
+      <section id="section-29">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-24">#</a>
+            <a class="octothorpe" href="#section-29">#</a>
           </div>
           <p><code>parse_block_comment</code> takes in a list of contents and parses out block comments.
 <code>is_block_comment</code> is 0 for non-block-comment lines,
@@ -483,10 +539,10 @@ TODO: handle single-line block comments.</p>
     <span class="k">if</span> <span class="n">block_syms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">block_syms</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
 </pre></div></div>
       </section>
-      <section id="section-25">
+      <section id="section-30">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-25">#</a>
+            <a class="octothorpe" href="#section-30">#</a>
           </div>
           <p>If the start and end of a block comment is one symbol,
 every other symbol must be an end quote.</p>
@@ -499,10 +555,10 @@ every other symbol must be an end quote.</p>
 
 </pre></div></div>
       </section>
-      <section id="section-26">
+      <section id="section-31">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-26">#</a>
+            <a class="octothorpe" href="#section-31">#</a>
           </div>
           <p><code>level</code> is the nesting level of block comments.</p>
 
@@ -510,10 +566,10 @@ every other symbol must be an end quote.</p>
         <div class="code"><div class="highlight"><pre>    <span class="k">def</span><span class="w"> </span><span class="nf">next_level</span><span class="p">(</span><span class="n">seen</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 </pre></div></div>
       </section>
-      <section id="section-27">
+      <section id="section-32">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-27">#</a>
+            <a class="octothorpe" href="#section-32">#</a>
           </div>
           <p>We don't handle recursive block_comments, because most languages don't support them.
 If we do, we would need to increment <code>seen_quote</code> here.
@@ -528,90 +584,23 @@ Using <code>max</code>, this code works even if there are more end quotes than s
 
 </pre></div></div>
       </section>
-      <section id="section-28">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-28">#</a>
-          </div>
-          <h3>Formatting</h3>
-
-        </div>
-        <div class="code"><div class="highlight"><pre><span class="n">HTML_FORMATTER</span> <span class="o">=</span> <span class="n">pygments</span><span class="o">.</span><span class="n">formatters</span><span class="o">.</span><span class="n">HtmlFormatter</span><span class="p">()</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">highlight</span><span class="p">(</span>
-    <span class="n">code_chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">chunk_locs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">comment_sym</span><span class="p">:</span> <span class="nb">str</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</pre></div></div>
-      </section>
-      <section id="section-29">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-29">#</a>
-          </div>
-          <p><code>highlight</code> turns a list of code chunks into HTML using pygments.
-The code chunks are merged and passed to pygments in one go,
-because pygment can't highlight partial code.
-Magic divider text and html adapted from pycco.</p>
-
-        </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">divider_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comment_sym</span><span class="si">}</span><span class="s2">DIVIDER</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="n">divider_html</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rf</span><span class="s1">&#39;&lt;span class=&quot;c[1]?&quot;&gt;</span><span class="si">{</span><span class="n">comment_sym</span><span class="si">}</span><span class="s1">DIVIDER&lt;/span&gt;\n&#39;</span><span class="p">)</span>
-</pre></div></div>
-      </section>
-      <section id="section-30">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-30">#</a>
-          </div>
-          <p>To do this, we join all code chunks into a single program
-with a piece of divider text in between,</p>
-
-        </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">joined_code</span> <span class="o">=</span> <span class="n">divider_text</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">code_chunks</span><span class="p">))</span>
-</pre></div></div>
-      </section>
-      <section id="section-31">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-31">#</a>
-          </div>
-          <p>highlight the whole thing using pygments,
-(TODO: map line numbers)</p>
-
-        </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">lexer</span> <span class="o">=</span> <span class="n">pygments</span><span class="o">.</span><span class="n">lexers</span><span class="o">.</span><span class="n">get_lexer_by_name</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">pygments</span><span class="o">.</span><span class="n">highlight</span><span class="p">(</span><span class="n">joined_code</span><span class="p">,</span> <span class="n">lexer</span><span class="p">,</span> <span class="n">HTML_FORMATTER</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;/pre&gt;&lt;/div&gt;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
-</pre></div></div>
-      </section>
-      <section id="section-32">
-        <div class="doc">
-          <div class="octowrap">
-            <a class="octothorpe" href="#section-32">#</a>
-          </div>
-          <p>then split it into html to get the html for each code section.</p>
-
-        </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">htmls</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="sa">f</span><span class="s1">&#39;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&lt;/pre&gt;&lt;/div&gt;&#39;</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">divider_html</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="k">return</span> <span class="n">htmls</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">to_markdown</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</pre></div></div>
-      </section>
       <section id="section-33">
         <div class="doc">
           <div class="octowrap">
             <a class="octothorpe" href="#section-33">#</a>
           </div>
-          <p><code>to_markdown</code> convert chunks to markdown.</p>
+          <h2>Formatting</h2>
+
+        </div>
+        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">to_markdown</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</pre></div></div>
+      </section>
+      <section id="section-34">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-34">#</a>
+          </div>
+          <p><code>to_markdown</code> convert chunks to markdown. It is quite simple!</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>    <span class="n">md</span> <span class="o">=</span> <span class="p">[]</span>
@@ -619,10 +608,10 @@ with a piece of divider text in between,</p>
         <span class="k">if</span> <span class="n">chunk_type</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span>
 </pre></div></div>
       </section>
-      <section id="section-34">
+      <section id="section-35">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-34">#</a>
+            <a class="octothorpe" href="#section-35">#</a>
           </div>
           <p>For markdown, we dedent doc chunks for better readability.</p>
 
@@ -631,10 +620,10 @@ with a piece of divider text in between,</p>
         <span class="k">else</span><span class="p">:</span>
 </pre></div></div>
       </section>
-      <section id="section-35">
+      <section id="section-36">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-35">#</a>
+            <a class="octothorpe" href="#section-36">#</a>
           </div>
           <p>We strip trailing spaces and newlines off code chunks, so that
 each code block ends with actual code instead of empty lines.</p>
@@ -644,6 +633,22 @@ each code block ends with actual code instead of empty lines.</p>
             <span class="k">if</span> <span class="n">stripped</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
                 <span class="n">md</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;```</span><span class="si">{</span><span class="n">language</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stripped</span><span class="si">}</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">md</span><span class="p">)</span>
+
+
+</pre></div></div>
+      </section>
+      <section id="section-37">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-37">#</a>
+          </div>
+          <p>HTML's more tricky though, because it needs styling and formatting.
+We use pygments for code highlighting and markdown-it for markdown formatting.
+For markdown, we use the commonmark spec with tables and footnotes enabled.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre><span class="n">HTML_FORMATTER</span> <span class="o">=</span> <span class="n">pygments</span><span class="o">.</span><span class="n">formatters</span><span class="o">.</span><span class="n">HtmlFormatter</span><span class="p">()</span>
+<span class="n">MD</span> <span class="o">=</span> <span class="n">MarkdownIt</span><span class="p">(</span><span class="s2">&quot;commonmark&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">footnote_plugin</span><span class="p">)</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">to_html</span><span class="p">(</span>
@@ -657,13 +662,13 @@ each code block ends with actual code instead of empty lines.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </pre></div></div>
       </section>
-      <section id="section-36">
+      <section id="section-38">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-36">#</a>
+            <a class="octothorpe" href="#section-38">#</a>
           </div>
-          <p><code>to_html</code> convert chunks to HTML.
-Code is parsed using pygments.</p>
+          <p><code>to_html</code> convert chunks to HTML. This function is quite big for now,
+need to break it down into smaller functions soon.</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>    <span class="n">code_locs</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">]</span>
@@ -674,34 +679,33 @@ Code is parsed using pygments.</p>
         <span class="n">comment_sym</span><span class="o">=</span><span class="n">comment_sym</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="n">docs_locs</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">]</span>
+    <span class="n">docs_html</span> <span class="o">=</span> <span class="p">[</span><span class="n">MD</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">docs_locs</span><span class="p">]</span>
+
 </pre></div></div>
       </section>
-      <section id="section-37">
+      <section id="section-39">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-37">#</a>
+            <a class="octothorpe" href="#section-39">#</a>
           </div>
-          <p>Docs are parsed using markdown-it according to the commonmark spec
-with tables and footnotes enabled.</p>
+          <p>Join the code and doc html strings together.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">docs_locs</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">]</span>
-    <span class="n">md</span> <span class="o">=</span> <span class="n">MarkdownIt</span><span class="p">(</span><span class="s2">&quot;commonmark&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">footnote_plugin</span><span class="p">)</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">)</span>
-    <span class="n">docs_html</span> <span class="o">=</span> <span class="p">[</span><span class="n">md</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">docs_locs</span><span class="p">]</span>
-
-    <span class="n">html</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">html</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">code_locs</span><span class="p">,</span> <span class="n">code_html</span><span class="p">):</span>
         <span class="n">html</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">docs_locs</span><span class="p">,</span> <span class="n">docs_html</span><span class="p">):</span>
         <span class="n">html</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 </pre></div></div>
       </section>
-      <section id="section-38">
+      <section id="section-40">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-38">#</a>
+            <a class="octothorpe" href="#section-40">#</a>
           </div>
-          <p>Pair the doc and code chunks together.</p>
+          <p>This pairing is set up, so that two consecutive chunks of the same type
+remain together in the output view.</p>
 
         </div>
         <div class="code"><div class="highlight"><pre>    <span class="n">sections</span> <span class="o">=</span> <span class="p">[]</span>
@@ -731,24 +735,89 @@ with tables and footnotes enabled.</p>
     <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">highlight</span><span class="p">(</span>
+    <span class="n">code_chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">chunk_locs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">language</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">comment_sym</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </pre></div></div>
       </section>
-      <section id="section-39">
+      <section id="section-41">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-39">#</a>
+            <a class="octothorpe" href="#section-41">#</a>
           </div>
-          <h3>Command line interface</h3>
+          <p><code>highlight</code> turns a list of code chunks into HTML using pygments.
+The code chunks are merged and passed to pygments in one go,
+because pygment can't highlight partial code.
+Magic divider text and html adapted from pycco.</p>
 
         </div>
-        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+        <div class="code"><div class="highlight"><pre>    <span class="n">divider_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comment_sym</span><span class="si">}</span><span class="s2">DIVIDER</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">divider_html</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rf</span><span class="s1">&#39;&lt;span class=&quot;c[1]?&quot;&gt;</span><span class="si">{</span><span class="n">comment_sym</span><span class="si">}</span><span class="s1">DIVIDER&lt;/span&gt;\n&#39;</span><span class="p">)</span>
+</pre></div></div>
+      </section>
+      <section id="section-42">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-42">#</a>
+          </div>
+          <p>To do this, we join all code chunks into a single program
+with a piece of divider text in between,</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">joined_code</span> <span class="o">=</span> <span class="n">divider_text</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">code_chunks</span><span class="p">))</span>
+</pre></div></div>
+      </section>
+      <section id="section-43">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-43">#</a>
+          </div>
+          <p>highlight the whole thing using pygments,
+(TODO: map line numbers)</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">lexer</span> <span class="o">=</span> <span class="n">pygments</span><span class="o">.</span><span class="n">lexers</span><span class="o">.</span><span class="n">get_lexer_by_name</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pygments</span><span class="o">.</span><span class="n">highlight</span><span class="p">(</span><span class="n">joined_code</span><span class="p">,</span> <span class="n">lexer</span><span class="p">,</span> <span class="n">HTML_FORMATTER</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;/pre&gt;&lt;/div&gt;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+</pre></div></div>
+      </section>
+      <section id="section-44">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-44">#</a>
+          </div>
+          <p>then split it into html to get the html for each code section.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">htmls</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s1">&#39;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&lt;/pre&gt;&lt;/div&gt;&#39;</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">divider_html</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">htmls</span>
+
+
+</pre></div></div>
+      </section>
+      <section id="section-45">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-45">#</a>
+          </div>
+          <h2>Appendix</h2>
+<h3>Command line interface</h3>
+
+        </div>
+        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;A simple literate programming tool.&quot;</span><span class="p">)</span>
 </pre></div></div>
       </section>
-      <section id="section-40">
+      <section id="section-46">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-40">#</a>
+            <a class="octothorpe" href="#section-46">#</a>
           </div>
           <p>TODO: add rationale for the arguments</p>
 
@@ -799,10 +868,10 @@ with tables and footnotes enabled.</p>
         <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
 </pre></div></div>
       </section>
-      <section id="section-41">
+      <section id="section-47">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-41">#</a>
+            <a class="octothorpe" href="#section-47">#</a>
           </div>
           <p>Some languages don't have block comments, so we default to None.</p>
 
@@ -813,56 +882,106 @@ with tables and footnotes enabled.</p>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">),</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;source file to process&quot;</span>
     <span class="p">)</span>
-    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
 </pre></div></div>
       </section>
-      <section id="section-42">
+      <section id="section-48">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-42">#</a>
+            <a class="octothorpe" href="#section-48">#</a>
           </div>
-          <p>We use the file's extension to determine the language if not specified.</p>
+          <h3>Utility functions</h3>
 
         </div>
-        <div class="code"><div class="highlight"><pre>    <span class="n">lang</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">language</span> <span class="k">else</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">comment_sym</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">comment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">block_syms</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">block</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">block</span> <span class="k">else</span> <span class="kc">None</span>
+        <div class="code"><div class="highlight"><pre><span class="k">def</span><span class="w"> </span><span class="nf">running</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</pre></div></div>
+      </section>
+      <section id="section-49">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-49">#</a>
+          </div>
+          <p><code>running</code> calculates a running value from an iterable using a binary function <code>f</code>.</p>
 
-    <span class="k">with</span> <span class="n">file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">code</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-    <span class="n">chunk_type</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_locs</span> <span class="o">=</span> <span class="n">extract_chunks</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">comment_sym</span><span class="p">,</span> <span class="n">block_syms</span><span class="p">)</span>
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="n">init</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f</span><span class="p">(</span><span class="n">init</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">init</span>
 
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span><span class="p">:</span>
-        <span class="n">markdown_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">markdown</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">markdown_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;# </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">to_markdown</span><span class="p">(</span><span class="n">chunk_type</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">lang</span><span class="p">))</span>
 
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span><span class="p">:</span>
-        <span class="n">template_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="k">else</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;template.html&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">template_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">template</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="n">html_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">html</span> <span class="ow">or</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">html_file</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">to_html</span><span class="p">(</span>
-                    <span class="n">chunk_type</span><span class="o">=</span><span class="n">chunk_type</span><span class="p">,</span>
-                    <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span>
-                    <span class="n">chunk_locs</span><span class="o">=</span><span class="n">chunk_locs</span><span class="p">,</span>
-                    <span class="n">language</span><span class="o">=</span><span class="n">lang</span><span class="p">,</span>
-                    <span class="n">comment_sym</span><span class="o">=</span><span class="n">comment_sym</span><span class="p">,</span>
-                    <span class="n">file_name</span><span class="o">=</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">running_sum</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</pre></div></div>
+      </section>
+      <section id="section-50">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-50">#</a>
+          </div>
+          <p><code>running_sum</code> calculates the running sum of an iterable.</p>
+<pre><code class="language-py">&gt;&gt;&gt; list(running_sum(range(5)))
+[0, 1, 3, 6, 10]
+
+&gt;&gt;&gt; list(running_sum(range(5), 10))
+[10, 11, 13, 16, 20]
+
+</code></pre>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="k">return</span> <span class="n">running</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">leading_count</span><span class="p">(</span><span class="n">char</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</pre></div></div>
+      </section>
+      <section id="section-51">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-51">#</a>
+          </div>
+          <p><code>leading_count</code> counts the number of leading characters <code>char</code> in a string <code>s</code>.</p>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">char</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dedent</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</pre></div></div>
+      </section>
+      <section id="section-52">
+        <div class="doc">
+          <div class="octowrap">
+            <a class="octothorpe" href="#section-52">#</a>
+          </div>
+          <p><code>dedent</code> dedents a list of strings, removing the minimum leading whitespace
+from all visible lines. Invisible lines (empty or whitespace-only)
+are left unchanged.</p>
+<pre><code class="language-py">&gt;&gt;&gt; dedent([&quot;    4 spaces&quot;, &quot;  2 spaces&quot;, &quot;&quot;, &quot;   3 spaces&quot;])
+['  4 spaces', '2 spaces', '', ' 3 spaces']
+
+</code></pre>
+
+        </div>
+        <div class="code"><div class="highlight"><pre>    <span class="n">stripped</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">s</span><span class="p">]</span>
+    <span class="n">min_indent</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">leading_count</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">stripped</span><span class="p">)</span> <span class="k">if</span> <span class="n">st</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_indent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">line</span><span class="p">[</span><span class="n">min_indent</span><span class="p">:]</span> <span class="k">if</span> <span class="n">st</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="k">else</span> <span class="n">line</span> <span class="k">for</span> <span class="n">line</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">stripped</span><span class="p">)]</span>
 
 
 </pre></div></div>
       </section>
-      <section id="section-43">
+      <section id="section-53">
         <div class="doc">
           <div class="octowrap">
-            <a class="octothorpe" href="#section-43">#</a>
+            <a class="octothorpe" href="#section-53">#</a>
           </div>
           <h2>Finally, start the script</h2>
 
