@@ -69,11 +69,12 @@ def running_sum(iterable, init=None):
 `running_sum` calculates the running sum of an iterable.
 
 ``` py
->> list(running_sum(range(5)))
-[0, 1, 3, 6, 10, 15]
+>>> list(running_sum(range(5)))
+[0, 1, 3, 6, 10]
 
->> list(running_sum(range(5), 10))
-[10, 11, 13, 16, 20, 25]
+>>> list(running_sum(range(5), 10))
+[10, 11, 13, 16, 20]
+
 ```
 
 ```py
@@ -102,6 +103,7 @@ are left unchanged.
 ``` py
 >>> dedent(["    4 spaces", "  2 spaces", "", "   3 spaces"])
 ['  4 spaces', '2 spaces', '', ' 3 spaces']
+
 ```
 
 ```py

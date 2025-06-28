@@ -5,7 +5,8 @@ import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-COMMAND = "uv run doci.py -m README.md -H index.html doci.py"
+DOCTEST = "uv run python -m doctest doci.py"
+MAKE_DOC = "uv run doci.py -m README.md -H index.html doci.py"
 
 
 def run():
@@ -14,7 +15,11 @@ def run():
     """
     try:
         subprocess.run(
-            COMMAND.split(" "),
+            DOCTEST.split(" "),
+            check=True,
+        )
+        subprocess.run(
+            MAKE_DOC.split(" "),
             check=True,
         )
     except subprocess.CalledProcessError as e:
@@ -37,7 +42,7 @@ def watch(watch=False):
         def on_modified(self, event):
             for file in ["doci.py", "doci.css", "template.html"]:
                 if event.src_path.endswith(file):
-                    print(f"{file} changed, running '{COMMAND}'...")
+                    print(f"{file} changed, running '{MAKE_DOC}'...")
                     run()
                     print("Watching for changes...")
                     break

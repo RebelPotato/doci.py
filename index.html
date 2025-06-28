@@ -180,11 +180,12 @@ given that <code>template.html</code> exists in the same folder.</p>
             <a class="octothorpe" href="#section-7">#</a>
           </div>
           <p><code>running_sum</code> calculates the running sum of an iterable.</p>
-<pre><code class="language-py">&gt;&gt; list(running_sum(range(5)))
-[0, 1, 3, 6, 10, 15]
+<pre><code class="language-py">&gt;&gt;&gt; list(running_sum(range(5)))
+[0, 1, 3, 6, 10]
 
-&gt;&gt; list(running_sum(range(5), 10))
-[10, 11, 13, 16, 20, 25]
+&gt;&gt;&gt; list(running_sum(range(5), 10))
+[10, 11, 13, 16, 20]
+
 </code></pre>
 
         </div>
@@ -223,6 +224,7 @@ from all visible lines. Invisible lines (empty or whitespace-only)
 are left unchanged.</p>
 <pre><code class="language-py">&gt;&gt;&gt; dedent([&quot;    4 spaces&quot;, &quot;  2 spaces&quot;, &quot;&quot;, &quot;   3 spaces&quot;])
 ['  4 spaces', '2 spaces', '', ' 3 spaces']
+
 </code></pre>
 
         </div>
