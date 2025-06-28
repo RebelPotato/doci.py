@@ -8,9 +8,10 @@
 #
 # * is simpler and better documented (in my opinion)
 # * processes most languages, by virtue of being dumb
+# * generates both markdown and HTML
 # * has a customizable template that works on mobile out of the box
 #
-# Dok is written literately and generates its own documentation,
+# Dok is written literately and generates its own documentation (you're reading it right now),
 # so it should be quite easy to understand, modify and extend.
 #
 # ![Screenshot of Dok output](./assets/screenshot.png)
@@ -42,6 +43,7 @@
 # ```
 #
 # or in powershell:
+#
 # ```powershell
 # # note the horrendous quoting
 # uv run dok.py -m README.md -H index.html -c '#' -b '""""""""' '""""""""' dok.py
@@ -55,9 +57,11 @@
 # and change the comment and block comment symbols accordingly.
 #
 # If you're using javascript for instance:
+#
 # ```bash
 # uv run dok.py -m -H -c '//' -b '/*' '*/' script.js
 # ```
+#
 # will create `script.js.md` and `script.js.html` from `script.js`,
 #
 # By itself it's quite dumb and needs to rely on other tools. For example, `scripts/build.py`
@@ -360,6 +364,7 @@ def highlight(
 
 
 # ## Appendix
+#
 # ### Command line interface
 def parse_args():
     parser = argparse.ArgumentParser(description="A simple literate programming tool.")
